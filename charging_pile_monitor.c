@@ -7,12 +7,12 @@
 PG_MODULE_MAGIC;
 #endif
 
-extern Datum passwd_monitor(PG_FUNCTION_ARGS);
+extern Datum charging_pile_monitor(PG_FUNCTION_ARGS);
 
-PG_FUNCTION_INFO_V1(passwd_monitor);
+PG_FUNCTION_INFO_V1(charging_pile_monitor);
 
 Datum
-passwd_monitor(PG_FUNCTION_ARGS)
+charging_pile_monitor(PG_FUNCTION_ARGS)
 {
 	TriggerData *trigdata = (TriggerData *) fcinfo->context;
 	TupleDesc   tupdesc;
@@ -22,7 +22,7 @@ passwd_monitor(PG_FUNCTION_ARGS)
 
 	/* make sure it's called as a trigger at all */
 	if (!CALLED_AS_TRIGGER(fcinfo))
-		elog(ERROR, "passwd_monitor: not called by trigger manager");
+		elog(ERROR, "charging_pile_monitor: not called by trigger manager");
 
 	/* tuple to return to executor */
 	if (TRIGGER_FIRED_BY_UPDATE(trigdata->tg_event)){
@@ -47,9 +47,14 @@ passwd_monitor(PG_FUNCTION_ARGS)
 	notify[0] = opcode;
 	notify[1] = '^';
 	notifylen = 2;
+
+	elog(INFO, "nattr %d",  natts);
 	
 	int i = 0;
 	for(; i < natts; ++i){
+		if (tupdesc->attrs[i]->attisdropped)
+			continue;
+
 		value = SPI_getvalue(rettuple, tupdesc, i+1);
 		if (value == NULL) {
 			value = "$";
@@ -63,7 +68,7 @@ passwd_monitor(PG_FUNCTION_ARGS)
 	elog(INFO, "%s", notify);
 
 	int ret;
-	char *tablename = " passwd,";
+	char *tablename = " t_charge_pile,";
 	int tablenamelen = strlen(tablename);
 	if ((ret = SPI_connect()) < 0)
 		elog(ERROR, "SPI connect return %d", ret);

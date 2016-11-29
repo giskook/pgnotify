@@ -1,4 +1,4 @@
-CREATE FUNCTION passwd_monitor() RETURNS trigger
+CREATE FUNCTION charging_pile_monitor() RETURNS trigger
 AS ''
 LANGUAGE C;
 
